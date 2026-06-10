@@ -1,1 +1,4 @@
 About Me/
+.env
+__pycache__/
+*.pyc
