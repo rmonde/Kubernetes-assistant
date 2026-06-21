@@ -1,6 +1,6 @@
 About Me/
-Claude-output/
 .azure-openai-venv/
 .env
 __pycache__/
 *.pyc
+Claude-output/
