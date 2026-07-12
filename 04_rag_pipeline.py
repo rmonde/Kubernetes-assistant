@@ -10,7 +10,8 @@ load_dotenv()
 client = AzureOpenAI(
     api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_version=os.getenv("AZURE_OPENAI_API_VERSION")
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    timeout=60
     )
 
 def embed(question):
@@ -42,9 +43,10 @@ def search(vector):
     return results
 
 def build_prompt(question, chunk):
+    formatted_context = "\n\n---\n\n".join(chunk)
     prompt = f"""
     Question: {question}
-    Context: {"\n\n---\n\n".join(chunk)}
+    Context: {formatted_context}
     Answer:
     """
     print(prompt)

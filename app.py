@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, request, jsonify
 import importlib
 
@@ -29,6 +31,15 @@ def user_question():
     answer = pipeline.build_prompt(question, chunk)
     print(answer)
     return jsonify({"answer": answer}), 200
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    response = {
+        "success": True,
+        "status_code": 200,
+        "message": "Service is up and running"
+    }
+    return jsonify(response), 200
   
 # for 404 - not found    
 @app.errorhandler(404)
@@ -52,7 +63,9 @@ def method_not_allowed(error):
     
 
 def main():
-    app.run(debug=True)
+    # Reads FLASK_DEBUG environment variable, defaults to False
+    debug_mode = os.getenv("FLASK_DEBUG", "0") in ("1", "true", "True")
+    app.run(host="0.0.0.0", port=5000, debug=debug_mode)
 
 if __name__=="__main__":
     main()

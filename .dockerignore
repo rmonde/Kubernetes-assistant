@@ -8,7 +8,7 @@ env/
 venv/
 .git
 .gitignore
-.azure-open-venv
+.azure-openai-venv/
 About Me/
 Claude-output/
 README.md
