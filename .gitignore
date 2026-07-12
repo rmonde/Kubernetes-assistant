@@ -4,3 +4,7 @@ About Me/
 __pycache__/
 *.pyc
 Claude-output/
+Infrastructure/.terraform/
+*.tfplan
+*.tfstate
+*.tfstate.backup

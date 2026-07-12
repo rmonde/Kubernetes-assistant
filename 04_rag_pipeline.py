@@ -3,12 +3,20 @@ from dotenv import load_dotenv
 from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
 from azure.core.credentials import AzureKeyCredential
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 import os
 
 load_dotenv()
 
+credential = DefaultAzureCredential()
+token_provider = get_bearer_token_provider(
+    credential, 
+    "https://cognitiveservices.azure.com/.default"
+)
+
 client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
+    # api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    azure_ad_token_provider=token_provider,
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
     timeout=60
@@ -24,7 +32,7 @@ def embed(question):
     return response.data[0].embedding
 
 def search(vector):
-    credential = AzureKeyCredential(os.getenv("AZURE_SEARCH_ADMIN_KEY"))
+    #credential = AzureKeyCredential(os.getenv("AZURE_SEARCH_ADMIN_KEY"))
     search_client = SearchClient(
         endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
         index_name=os.getenv("AZURE_SEARCH_INDEX_NAME"),
