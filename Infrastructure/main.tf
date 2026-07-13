@@ -59,6 +59,12 @@ resource "azurerm_role_assignment" "acr_pull" {
   scope                = data.azurerm_container_registry.k8s_assistant_rag_acr.id
 }
 
+resource "azurerm_role_assignment" "kubelet_acr_pull" {
+  principal_id         = data.azurerm_kubernetes_cluster.k8s_assistant_rag_aks.kubelet_identity[0].object_id
+  role_definition_name = "AcrPull"
+  scope                = data.azurerm_container_registry.k8s_assistant_rag_acr.id
+}
+
 resource "azurerm_role_assignment" "openai_user" {
   principal_id         = azurerm_user_assigned_identity.aks_identity.principal_id
   role_definition_name = "Cognitive Services OpenAI User"

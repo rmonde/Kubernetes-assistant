@@ -19,7 +19,7 @@ spec:
       serviceAccountName: k8s-service-account
       containers:
         - name: k8s-assistant
-          image: k8sassistantrag.azurecr.io/rag-app:677a8b66156ec5fea8d2016968c99043dc0da959
+          image: k8sassistantrag.azurecr.io/rag-app:86f2ad6ffbf45c45bbec6b26e51f985d3063394a
           ports:
             - containerPort: 5000
           env:
