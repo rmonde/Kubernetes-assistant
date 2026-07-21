@@ -76,3 +76,28 @@ resource "azurerm_role_assignment" "search_index_data_reader" {
   role_definition_name = "Search Index Data Reader"
   scope                = data.azurerm_search_service.search.id
 }
+
+resource "azurerm_user_assigned_identity" "aks-identity-staging" {
+  location            = data.azurerm_kubernetes_cluster.k8s_assistant_rag_aks.location
+  name                = "rag-app-identity-staging"
+  resource_group_name = data.azurerm_kubernetes_cluster.k8s_assistant_rag_aks.resource_group_name
+}
+
+resource "azurerm_federated_identity_credential" "aks_federated_identity_staging" {
+  name                      = "aks-federated-identity-staging"
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = data.azurerm_kubernetes_cluster.k8s_assistant_rag_aks.oidc_issuer_url
+  user_assigned_identity_id = azurerm_user_assigned_identity.aks-identity-staging.id
+  subject                   = "system:serviceaccount:kubernetes-assistant-staging:k8s-service-account"
+}
+resource "azurerm_role_assignment" "openai_user_staging" {
+  principal_id         = azurerm_user_assigned_identity.aks-identity-staging.principal_id
+  role_definition_name = "Cognitive Services OpenAI User"
+  scope                = data.azurerm_cognitive_account.openai.id
+}
+
+resource "azurerm_role_assignment" "search_index_data_reader_staging" {
+  principal_id         = azurerm_user_assigned_identity.aks-identity-staging.principal_id
+  role_definition_name = "Search Index Data Reader"
+  scope                = data.azurerm_search_service.search.id
+}

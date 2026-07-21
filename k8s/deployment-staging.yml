@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-assistant
+  namespace: kubernetes-assistant-staging
+  labels:
+    app: k8s-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-assistant
+  template:
+    metadata:
+      labels:
+        app: k8s-assistant
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: k8s-service-account
+      containers:
+        - name: k8s-assistant
+          image: k8sassistantrag.azurecr.io/rag-app:86f2ad6ffbf45c45bbec6b26e51f985d3063394a
+          ports:
+            - containerPort: 5000
+          env:
+            - name: AZURE_OPENAI_ENDPOINT
+              value: "https://aoai-k8s-assistant-0a251.openai.azure.com"
+            - name: AZURE_SEARCH_ENDPOINT
+              value: "https://srch-k8s-assistant.search.windows.net"
+            - name: AZURE_OPENAI_DEPLOYMENT
+              value: "chat"
+            - name: AZURE_OPENAI_API_VERSION
+              value: "2024-06-01"
+            - name: AZURE_OPENAI_EMBEDDING_DEPLOYMENT
+              value: "embedding"
+            - name: AZURE_SEARCH_INDEX_NAME
+              value: "k8s-knowledge"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+            requests:
+              cpu: "200m"
+              memory: 256Mi
