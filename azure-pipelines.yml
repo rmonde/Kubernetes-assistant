@@ -1,0 +1,155 @@
+trigger:
+  branches:
+    include:
+      - dev
+      - master
+
+parameters:
+- name: resourceGroup
+  type: string
+  default: 'rg-devopswithai'
+- name: aksClusterName
+  type: string
+  default: 'aks-devopswithai'
+
+variables:
+  acrServiceConnection: 'kubernetes-assistant-service-connection'
+  azureSubscriptionConnection: 'kubernetes-assistant-service-connection'
+  acrLoginServer: 'k8sassistantrag.azurecr.io'
+  imageRepository: 'rag-app'
+  deploymentName: 'k8s-assistant'
+  containerName: 'k8s-assistant'
+  dev-namespace: 'kubernetes-assistant-staging'
+  prod-namespace: 'kubernetes-assistant'
+  pythonVersion: '3.12'
+  
+
+
+stages:
+- stage: BuildAndScan
+  displayName: 'Build, Scan, and push Docker Image'
+  jobs:
+  - job: Build
+    displayName: 'Build, Scan, and push Docker Image'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: 'Build the Image'
+      inputs:
+        command: 'build'
+        repository: '$(imageRepository)'
+        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+        tags: |
+          $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
+    
+    # Install trivy and scan the image for vulnerabilities
+    - script: |
+        echo "Scanning the image for vulnerabilities..."
+        sudo apt-get install wget apt-transport-https gnupg -y
+        wget -qO - https://get.trivy.dev/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://get.trivy.dev/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install trivy -y
+              
+        echo "Running Trivy Scan..."
+        trivy image --exit-code 1 --severity CRITICAL $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
+      displayName: 'Install Trivy & Scan Image'
+
+    # Setup Python Runtime for Testing
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Provision Python Environment'
+
+    # Install Dependencies & Execute Pytest Suite
+    # Generates JUnit execution tracking and Cobertura metrics mapping
+    - script: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+        echo "Executing Suite and Generating Reports..."
+        pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml:coverage.xml
+      displayName: 'Run Pytest & Generate Coverage Metrics'
+
+    # Publish Results to Azure Pipeline Boards
+    - task: PublishTestResults@2
+      displayName: 'Publish Execution Metrics'
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/test-results.xml'
+      condition: always()
+
+    # Publish Visual Code Coverage Graph
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Coverage Breakdown'
+      inputs:
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+      condition: always()
+    
+    # Push to ACR (Only reachable if Security & Test metrics pass)
+    - task: Docker@2
+      displayName: 'Push the Image to ACR'
+      inputs:
+        command: 'push'
+        containerRegistry: '$(acrServiceConnection)'
+        repository: '$(imageRepository)'
+        tags: |
+          $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
+
+- stage: DeployToDev
+  displayName: 'Deploy to AKS'
+  dependsOn: BuildAndScan
+  condition: succeeded()
+  jobs:
+  - deployment: DeployToAKS
+    displayName: 'Deploy to AKS'
+    environment: 'dev'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureCLI@2
+            displayName: 'Deploy to AKS using kubectl'
+            inputs:
+              azureSubscription: '$(azureSubscriptionConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Setting up kubectl context..."
+                az aks get-credentials --resource-group $(resourceGroup) --name $(aksClusterName)
+
+                echo "Updating Kubernetes deployment with new changes..."
+                kubectl apply -f $(Build.SourcesDirectory)/deployment-staging.yml -n $(dev-namespace)
+                kubectl rollout status deployment/$(deploymentName) -n $(dev-namespace)
+
+- stage: DeployToProd
+  displayName: 'Deploy to Production'
+  dependsOn: DeployToDev
+  condition: succeeded()
+  jobs:
+  - deployment: DeployToAKSProd
+    displayName: 'Deploy to AKS Production'
+    environment: 'prod'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureCLI@2
+            displayName: 'Deploy to AKS using kubectl'
+            inputs:
+              azureSubscription: '$(azureSubscriptionConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Setting up kubectl context for production..."
+                az aks get-credentials --resource-group $(resourceGroup) --name $(aksClusterName)
+
+                echo "Updating Kubernetes deployment with new changes in production..."
+                kubectl apply -f $(Build.SourcesDirectory)/deployment.yml -n $(prod-namespace)
+                kubectl rollout status deployment/$(deploymentName) -n $(prod-namespace)
