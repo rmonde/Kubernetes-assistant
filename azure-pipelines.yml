@@ -99,9 +99,9 @@ stages:
           $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
 
 - stage: DeployToDev
-  displayName: 'Deploy to AKS'
+  displayName: 'Deploy to AKS (Development namespace)'
   dependsOn: BuildAndScan
-  condition: succeeded()
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'dev'))
   jobs:
   - deployment: DeployToAKS
     displayName: 'Deploy to AKS'
@@ -127,9 +127,9 @@ stages:
                 kubectl rollout status deployment/$(deploymentName) -n $(dev-namespace)
 
 - stage: DeployToProd
-  displayName: 'Deploy to Production'
-  dependsOn: DeployToDev
-  condition: succeeded()
+  displayName: 'Deploy to AKS (Production namespace)'
+  dependsOn: BuildAndScan
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'master'))
   jobs:
   - deployment: DeployToAKSProd
     displayName: 'Deploy to AKS Production'
