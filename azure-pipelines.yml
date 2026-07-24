@@ -13,7 +13,7 @@ parameters:
   default: 'aks-devopswithai'
 
 variables:
-  acrServiceConnection: 'kubernetes-assistant-service-connection'
+  acrServiceConnection: 'k8s-assistant-rag'
   azureSubscriptionConnection: 'kubernetes-assistant-service-connection'
   acrLoginServer: 'k8sassistantrag.azurecr.io'
   imageRepository: 'rag-app'
