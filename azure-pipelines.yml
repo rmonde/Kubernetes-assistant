@@ -38,10 +38,10 @@ stages:
       displayName: 'Build the Image'
       inputs:
         command: 'build'
-        repository: '$(imageRepository)'
+        repository: '$(acrLoginServer)/$(imageRepository)'
         dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
         tags: |
-          $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
+          $(Build.SourceVersion)
     
     # Install trivy and scan the image for vulnerabilities
     - script: |
@@ -94,9 +94,9 @@ stages:
       inputs:
         command: 'push'
         containerRegistry: '$(acrServiceConnection)'
-        repository: '$(imageRepository)'
+        repository: '$(acrLoginServer)/$(imageRepository)'
         tags: |
-          $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
+          $(Build.SourceVersion)
 
 - stage: DeployToDev
   displayName: 'Deploy to AKS (Development namespace)'
