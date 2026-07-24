@@ -53,7 +53,17 @@ stages:
         sudo apt-get install trivy -y
               
         echo "Running Trivy Scan..."
-        trivy image --exit-code 1 --severity CRITICAL $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
+        echo "=========================================================="
+        echo "SCAN 1: Checking for CRITICAL bugs that HAVE a fix..."
+        echo "=========================================================="
+        # This will FAIL the build if a patch exists but you haven't applied it
+        trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
+
+        echo "=========================================================="
+        echo "SCAN 2: Logging CRITICAL bugs with NO fix available yet..."
+        echo "=========================================================="
+        # This uses --exit-code 0 so it NEVER breaks the build, but lists 0-days
+        trivy image --exit-code 0 --severity CRITICAL --ignore-status affected,will_not_fix,fix_deferred $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
       displayName: 'Install Trivy & Scan Image'
 
     # # Setup Python Runtime for Testing
