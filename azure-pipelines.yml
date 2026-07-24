@@ -73,20 +73,20 @@ stages:
     #     pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml:coverage.xml
     #   displayName: 'Run Pytest & Generate Coverage Metrics'
 
-    # Publish Results to Azure Pipeline Boards
-    - task: PublishTestResults@2
-      displayName: 'Publish Execution Metrics'
-      inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: '**/test-results.xml'
-      condition: always()
+    # # Publish Results to Azure Pipeline Boards
+    # - task: PublishTestResults@2
+    #   displayName: 'Publish Execution Metrics'
+    #   inputs:
+    #     testResultsFormat: 'JUnit'
+    #     testResultsFiles: '**/test-results.xml'
+    #   condition: always()
 
-    # Publish Visual Code Coverage Graph
-    - task: PublishCodeCoverageResults@2
-      displayName: 'Publish Coverage Breakdown'
-      inputs:
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
-      condition: always()
+    # # Publish Visual Code Coverage Graph
+    # - task: PublishCodeCoverageResults@2
+    #   displayName: 'Publish Coverage Breakdown'
+    #   inputs:
+    #     summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+    #   condition: always()
     
     # Push to ACR (Only reachable if Security & Test metrics pass)
     - task: Docker@2
