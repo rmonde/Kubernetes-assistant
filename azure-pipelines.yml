@@ -111,7 +111,7 @@ stages:
 - stage: DeployToDev
   displayName: 'Deploy to AKS (Development namespace)'
   dependsOn: BuildAndScan
-  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'dev'))
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
   jobs:
   - deployment: DeployToAKS
     displayName: 'Deploy to AKS'
