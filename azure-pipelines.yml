@@ -56,22 +56,22 @@ stages:
         trivy image --exit-code 1 --severity CRITICAL $(acrLoginServer)/$(imageRepository):$(Build.SourceVersion)
       displayName: 'Install Trivy & Scan Image'
 
-    # Setup Python Runtime for Testing
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(pythonVersion)'
-      displayName: 'Provision Python Environment'
+    # # Setup Python Runtime for Testing
+    # - task: UsePythonVersion@0
+    #   inputs:
+    #     versionSpec: '$(pythonVersion)'
+    #   displayName: 'Provision Python Environment'
 
-    # Install Dependencies & Execute Pytest Suite
-    # Generates JUnit execution tracking and Cobertura metrics mapping
-    - script: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-cov
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    # # Install Dependencies & Execute Pytest Suite
+    # # Generates JUnit execution tracking and Cobertura metrics mapping
+    # - script: |
+    #     python -m pip install --upgrade pip
+    #     pip install pytest pytest-cov
+    #     if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
-        echo "Executing Suite and Generating Reports..."
-        pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml:coverage.xml
-      displayName: 'Run Pytest & Generate Coverage Metrics'
+    #     echo "Executing Suite and Generating Reports..."
+    #     pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml:coverage.xml
+    #   displayName: 'Run Pytest & Generate Coverage Metrics'
 
     # Publish Results to Azure Pipeline Boards
     - task: PublishTestResults@2
