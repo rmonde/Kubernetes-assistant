@@ -1,7 +1,12 @@
 import os
-
-from flask import Flask, request, jsonify
 import importlib
+from flask import Flask, request, jsonify
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+
+REQUEST_COUNT = Counter('ask_requests_total', 'Total /ask requests', ['status'])
+REQUEST_LATENCY = Histogram('ask_request_latency_seconds', 'Latency of /ask requests')
+
+
 
 pipeline = importlib.import_module("04_rag_pipeline")
 
@@ -14,22 +19,26 @@ def user_question():
     question = data.get('question')
 
     if not question:
+        REQUEST_COUNT.labels(status='400').inc()
         response = {
             "success": False,
             "status_code": 400,
             "message": "Question is missing from the body"
         }
         return jsonify(response), 400
-    
-    embedding = pipeline.embed(question)
-    results = pipeline.search(embedding)
 
-    chunk = []
-    for result in results:
-        chunk.append(result["content"])
+    with REQUEST_LATENCY.time():
+        embedding = pipeline.embed(question)
+        results = pipeline.search(embedding)
+
+        chunk = []
+        for result in results:
+            chunk.append(result["content"])
         
-    answer = pipeline.build_prompt(question, chunk)
+        answer = pipeline.build_prompt(question, chunk)
+
     print(answer)
+    REQUEST_COUNT.labels(status='200').inc()
     return jsonify({"answer": answer}), 200
 
 @app.route('/health', methods=['GET'])
@@ -60,6 +69,10 @@ def method_not_allowed(error):
         "message": "The HTTP method is not allowed for this endpoint"
     }
     return jsonify(response), 405
+
+@app.route('/metrics')
+def metrics():
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
     
 
 def main():

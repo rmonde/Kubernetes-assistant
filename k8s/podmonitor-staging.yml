@@ -1,0 +1,13 @@
+apiVersion: azmonitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: k8s-assistant-podmonitor
+  namespace: kubernetes-assistant-staging
+spec:
+  selector:
+    matchLabels:
+      app: k8s-assistant
+  podMetricsEndpoints:
+    - path: /metrics
+      portNumber: 5000
+      interval: 30s
