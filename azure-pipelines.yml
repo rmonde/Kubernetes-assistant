@@ -154,6 +154,9 @@ stages:
 
                 echo "Updating Kubernetes deployment with new changes..."
                 kubectl apply -f $(Build.SourcesDirectory)/k8s/deployment-staging.yml -n $(dev-namespace)
+                
+                kubectl set image deployment/k8s-assistant k8s-assistant=$(acrLoginServer)/$(imageRepository):$(Build.SourceVersion) -n $(dev-namespace)
+
                 kubectl rollout status deployment/$(deploymentName) -n $(dev-namespace)
 
 - stage: DeployToProd
@@ -192,4 +195,7 @@ stages:
 
                 echo "Updating Kubernetes deployment with new changes in production..."
                 kubectl apply -f $(Build.SourcesDirectory)/k8s/deployment.yml -n $(prod-namespace)
+                
+                kubectl set image deployment/k8s-assistant k8s-assistant=$(acrLoginServer)/$(imageRepository):$(Build.SourceVersion) -n $(prod-namespace)
+
                 kubectl rollout status deployment/$(deploymentName) -n $(prod-namespace)
