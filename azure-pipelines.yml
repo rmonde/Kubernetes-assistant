@@ -150,6 +150,16 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: bash@3
+            displayName: 'Check the directory structure and files'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Current directory structure:"
+                ls -R $(Build.SourcesDirectory)
+                echo "Contents of k8s directory:"
+                ls -R $(Build.SourcesDirectory)/k8s
+
           - task: AzureCLI@2
             displayName: 'Deploy to AKS using kubectl'
             inputs:
