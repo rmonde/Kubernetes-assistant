@@ -3,7 +3,6 @@ About Me/
 .env
 __pycache__/
 *.pyc
-Claude-output/
 Infrastructure/.terraform/
 *.tfplan
 *.tfstate
