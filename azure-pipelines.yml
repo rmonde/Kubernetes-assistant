@@ -2,7 +2,6 @@ trigger:
   branches:
     include:
       - main
-      - master
 
 parameters:
 - name: resourceGroup
@@ -121,7 +120,6 @@ stages:
 - stage: DeployToDev
   displayName: 'Deploy to AKS (Development namespace)'
   dependsOn: BuildAndScan
-  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
   jobs:
   - deployment: DeployToAKS
     displayName: 'Deploy to AKS'
@@ -161,8 +159,8 @@ stages:
 
 - stage: DeployToProd
   displayName: 'Deploy to AKS (Production namespace)'
-  dependsOn: BuildAndScan
-  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'master'))
+  dependsOn: DeployToDev
+  condition: succeeded()
   jobs:
   - deployment: DeployToAKSProd
     displayName: 'Deploy to AKS Production'
